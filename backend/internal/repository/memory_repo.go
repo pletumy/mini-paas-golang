@@ -28,6 +28,7 @@ func (r *MemoryRepo) Create(app Application) error {
 func (r *MemoryRepo) Update(app Application) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	app.UpdatedAt = time.Now()
 	r.data[app.ID] = app
 	return nil
 }
@@ -57,4 +58,14 @@ func (r *MemoryRepo) Delete(id string) error {
 	defer r.mu.Unlock()
 	delete(r.data, id)
 	return nil
+}
+
+func (r *MemoryRepo) ListAll() ([]Application, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	out := make([]Application, 0, len(r.data))
+	for _, v := range r.data {
+		out = append(out, v)
+	}
+	return out, nil
 }

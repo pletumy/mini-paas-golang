@@ -1,9 +1,14 @@
 package main
 
 import (
-	"fmt"
+	"log"
+	"mini-paas/backend/internal/api"
 	"mini-paas/backend/internal/repository"
 	"mini-paas/backend/internal/services"
+	"os"
+
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -14,16 +19,29 @@ func main() {
 	repo := repository.NewMemoryRepo()
 
 	appService := services.NewAppService(git, build, registry, deploy, repo)
+	appHandler := api.NewAppHandler(appService, repo)
 
-	id, err := appService.Deploy(services.DeployRequest{
-		Name:   "testapp",
-		GitURL: "https://github.com/example/test.git",
-	})
+	// ====== HTTP server ======
+	r := gin.Default()
+	r.Use(cors.Default())
 
-	if err != nil {
-		panic(err)
+	apiGrp := r.Group("/api")
+	{
+		apiGrp.POST("/apps", appHandler.Create)
+		apiGrp.GET("/apps", appHandler.List)
+		apiGrp.GET("/apps/:id", appHandler.Get)
+		apiGrp.DELETE("/apps/:id", appHandler.Delete)
+		apiGrp.GET("/apps/:id/logs", appHandler.Logs)
+
 	}
 
-	app, _ := repo.GetByID(id)
-	fmt.Printf("App deployed: %+v\n", app)
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	log.Printf("Server listening on :%s", port)
+	if err := r.Run(":" + port); err != nil {
+		log.Fatal(err)
+	}
 }
