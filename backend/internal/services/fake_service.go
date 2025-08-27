@@ -1,6 +1,9 @@
 package services
 
-import "fmt"
+import (
+	"fmt"
+	"mini-paas/backend/internal/repository"
+)
 
 type FakeGitService struct{}
 
@@ -24,4 +27,14 @@ type FakeDeployService struct{}
 
 func (f *FakeDeployService) Deploy(imageURL string, appName string) (string, error) {
 	return fmt.Sprintf("http://%s.local", appName), nil
+}
+
+func NewMockAppService(repo repository.ApplicationRepository) *AppService {
+	return NewAppService(
+		&FakeGitService{},
+		&FakeBuildService{},
+		&FakeRegistryService{},
+		&FakeDeployService{},
+		repo,
+	)
 }

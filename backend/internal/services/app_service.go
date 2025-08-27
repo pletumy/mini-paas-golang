@@ -36,6 +36,10 @@ type DeployRequest struct {
 	GitURL string
 }
 
+// func (s *AppService) Repo() repository.ApplicationRepository {
+// 	return s.repo
+// }
+
 func (s *AppService) Deploy(req DeployRequest) (string, error) {
 	id := uuid.New().String()
 	app := repository.Application{
@@ -89,4 +93,16 @@ func (s *AppService) Deploy(req DeployRequest) (string, error) {
 	}
 
 	return id, nil
+}
+
+func (s *AppService) GetAllApps() ([]repository.Application, error) {
+	return s.repo.ListAll()
+}
+
+func (s *AppService) GetAppByID(id string) (*repository.Application, error) {
+	return s.repo.GetByID(id)
+}
+
+func (s *AppService) DeleteApp(id string) error {
+	return s.repo.Delete(id)
 }

@@ -4,15 +4,15 @@ import "time"
 
 // entity object
 type Application struct {
-	ID          string    `json:"id"`
-	Name        string    `json:"name"`
+	ID          string    `gorm:"type::uuid;primaryKey" json:"id"`
+	Name        string    `gorm:"not null" json:"name"`
 	Description string    `json:"description"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 	GitURL      string    `json:"git_url"`
 	ImageURL    string    `json:"image_url"`
 	DeployURL   string    `json:"deploy_url"`
-	Status      string    `json:"status"`
+	Status      string    `gorm:"not null" json:"status"`
 }
 
 // work with DB

@@ -2,46 +2,41 @@ package main
 
 import (
 	"log"
-	"mini-paas/backend/internal/api"
+	"mini-paas/backend/internal/models"
 	"mini-paas/backend/internal/repository"
+	"mini-paas/backend/internal/routes"
 	"mini-paas/backend/internal/services"
-	"os"
 
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 func main() {
-	git := &services.FakeGitService{}
-	build := &services.FakeBuildService{}
-	registry := &services.FakeRegistryService{}
-	deploy := &services.FakeDeployService{}
-	repo := repository.NewMemoryRepo()
+	dsn := "host=localhost user=postres password=postgres db_name=mini_paas port=5432 sslmode=disable"
 
-	appService := services.NewAppService(git, build, registry, deploy, repo)
-	appHandler := api.NewAppHandler(appService, repo)
+	// connect db
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		log.Fatal("failed to connect database: ", err)
+	}
 
-	// ====== HTTP server ======
+	// auto migrate
+	if err := db.AutoMigrate(&models.Application{}); err != nil {
+		log.Fatal("failed to migrate: ", err)
+	}
+
+	// create repo & services
+	appRepo := repository.NewDBRepository(db)
+	appService := services.NewMockAppService(appRepo)
+
+	// setUp Gin Router
 	r := gin.Default()
-	r.Use(cors.Default())
+	api := r.Group("/api")
+	routes.SetupRoutes(api, appService)
 
-	apiGrp := r.Group("/api")
-	{
-		apiGrp.POST("/apps", appHandler.Create)
-		apiGrp.GET("/apps", appHandler.List)
-		apiGrp.GET("/apps/:id", appHandler.Get)
-		apiGrp.DELETE("/apps/:id", appHandler.Delete)
-		apiGrp.GET("/apps/:id/logs", appHandler.Logs)
-
-	}
-
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
-	log.Printf("Server listening on :%s", port)
-	if err := r.Run(":" + port); err != nil {
-		log.Fatal(err)
+	// run server
+	if err := r.Run(":8080"); err != nil {
+		log.Fatal("Failed to start server: ", err)
 	}
 }
