@@ -2,41 +2,47 @@ package main
 
 import (
 	"log"
+	"mini-paas/backend/internal/db"
 	"mini-paas/backend/internal/models"
-	"mini-paas/backend/internal/repository"
-	"mini-paas/backend/internal/routes"
-	"mini-paas/backend/internal/services"
 
-	"github.com/gin-gonic/gin"
+	"github.com/go-gormigrate/gormigrate/v2"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 func main() {
-	dsn := "host=localhost user=postres password=postgres db_name=mini_paas port=5432 sslmode=disable"
+	dsn := "host=localhost user=postgres password=123 dbname=mini_paas port=5432 sslmode=disable"
 
 	// connect db
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	dbConn, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatal("failed to connect database: ", err)
 	}
 
 	// auto migrate
-	if err := db.AutoMigrate(&models.Application{}); err != nil {
-		log.Fatal("failed to migrate: ", err)
+	m := gormigrate.New(dbConn, gormigrate.DefaultOptions, db.Migrations())
+	if err := m.Migrate(); err != nil {
+		log.Fatalf("cound not migrate: %v", err)
 	}
+	log.Printf("Migrating tables: %T %T %T %T",
+		models.Application{},
+		models.Deployment{},
+		models.Log{},
+		models.User{},
+	)
 
-	// create repo & services
-	appRepo := repository.NewDBRepository(db)
-	appService := services.NewMockAppService(appRepo)
+	log.Printf("Migration ran successfully :3")
 
-	// setUp Gin Router
-	r := gin.Default()
-	api := r.Group("/api")
-	routes.SetupRoutes(api, appService)
+	// // create repo & services
+	// appRepo := repository.NewDBRepository(dbConn)
+	// appService := services.NewMockAppService(appRepo)
 
-	// run server
-	if err := r.Run(":8080"); err != nil {
-		log.Fatal("Failed to start server: ", err)
-	}
+	// // setUp Gin Router
+	// r := gin.Default()
+	// api.SetupRoutes(r, appService)
+
+	// // run server
+	// if err := r.Run(":8080"); err != nil {
+	// 	log.Fatal("Failed to start server: ", err)
+	// }
 }

@@ -28,10 +28,10 @@ func (r *DBRepository) UpdateStatus(id string, status string) error {
 		Update("status", status).Error
 }
 
-func (r *DBRepository) GetByID(id string) (models.Application, error) {
+func (r *DBRepository) GetByID(id string) (*models.Application, error) {
 	var app models.Application
 	err := r.db.First(&app, "id = ?", id).Error
-	return app, err
+	return &app, err
 }
 
 func (r *DBRepository) ListAll() ([]models.Application, error) {

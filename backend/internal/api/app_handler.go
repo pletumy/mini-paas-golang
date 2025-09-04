@@ -11,10 +11,10 @@ import (
 
 type AppHandler struct {
 	appSvc *services.AppService
-	repo   repository.ApplicationRepository
+	repo   repository.AppRepository
 }
 
-func NewAppHandler(appSvc *services.AppService, repo repository.ApplicationRepository) *AppHandler {
+func NewAppHandler(appSvc *services.AppService, repo repository.AppRepository) *AppHandler {
 	return &AppHandler{
 		appSvc: appSvc,
 		repo:   repo,

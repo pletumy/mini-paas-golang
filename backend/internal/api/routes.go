@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRoutes(r *gin.Engine, appSvc services.AppService) {
+func SetupRoutes(r *gin.Engine, appSvc *services.AppService) {
 	api := r.Group("/api")
 
 	// Deploy new app
@@ -40,6 +40,7 @@ func SetupRoutes(r *gin.Engine, appSvc services.AppService) {
 		apps, err := appSvc.GetAllApps()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
 		}
 		c.JSON(http.StatusOK, apps)
 	})
