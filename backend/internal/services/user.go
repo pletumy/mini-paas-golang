@@ -13,8 +13,8 @@ type userService struct {
 	repo repository.UserRepository
 }
 
-func NewUserService(repo repository.UserRepository) userService {
-	return userService{repo: repo}
+func NewUserService(repo repository.UserRepository) UserService {
+	return &userService{repo: repo}
 }
 
 func (s *userService) CreateUser(ctx context.Context, user *models.User) (*models.User, error) {

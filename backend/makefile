@@ -25,3 +25,6 @@ run:
 	
 migrate:
 	go run cmd/server/main.go migrate
+
+test-integration:
+	go test ./internal/tests/... -v

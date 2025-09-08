@@ -11,5 +11,5 @@ type Log struct {
 	DeploymentID uuid.UUID `gorm:"type:uuid;not null"`
 	Message      string    `gorm:"not null"`
 	Level        string    `gorm:"default:INFO"`
-	Timestamp    time.Time
+	Timestamp    time.Time `gorm:"autoCreatetime"`
 }

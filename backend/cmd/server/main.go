@@ -2,47 +2,54 @@ package main
 
 import (
 	"log"
+	"mini-paas/backend/internal/api"
 	"mini-paas/backend/internal/db"
-	"mini-paas/backend/internal/models"
+	"mini-paas/backend/internal/repository"
+	"mini-paas/backend/internal/services"
+	"os"
 
-	"github.com/go-gormigrate/gormigrate/v2"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	dsn := "host=localhost user=postgres password=123 dbname=mini_paas port=5432 sslmode=disable"
+	dsn := os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		// dsn = "host=localhost user=postgres password=123 dbname=mini_paas port=5432 sslmode=disable"      //dev
+		dsn = "host=localhost user=postgres password=123 dbname=mini_paas_test port=5432 sslmode=disable" //test
+	}
 
-	// connect db
-	dbConn, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	gormDB, err := db.ConnectDB(dsn)
 	if err != nil {
-		log.Fatal("failed to connect database: ", err)
+		log.Fatalf("failed to connect to db: %v", err)
 	}
 
-	// auto migrate
-	m := gormigrate.New(dbConn, gormigrate.DefaultOptions, db.Migrations())
-	if err := m.Migrate(); err != nil {
-		log.Fatalf("cound not migrate: %v", err)
+	if len(os.Args) > 1 && os.Args[1] == "migrate" {
+		if err := db.RunMigrations(gormDB); err != nil {
+			log.Fatalf("Migration failed: %w", err)
+		}
+		return
 	}
-	log.Printf("Migrating tables: %T %T %T %T",
-		models.Application{},
-		models.Deployment{},
-		models.Log{},
-		models.User{},
-	)
 
-	log.Printf("Migration ran successfully :3")
+	// repo layers
+	appRepo := repository.NewAppRepository(gormDB)
+	depRepo := repository.NewDeploymentRepository(gormDB)
+	userRepo := repository.NewUserRepository(gormDB)
+	logRepo := repository.NewLogRepository(gormDB)
 
-	// // create repo & services
-	// appRepo := repository.NewDBRepository(dbConn)
-	// appService := services.NewMockAppService(appRepo)
+	// service layers
+	appService := services.NewAppService(appRepo)
+	depService := services.NewDeploymentService(depRepo)
+	userService := services.NewUserService(userRepo)
+	logService := services.NewLogService(logRepo)
 
-	// // setUp Gin Router
-	// r := gin.Default()
-	// api.SetupRoutes(r, appService)
+	// api router
+	r := gin.Default()
+	api.SetUpRoutes(r, appService, depService, userService, logService)
 
-	// // run server
-	// if err := r.Run(":8080"); err != nil {
-	// 	log.Fatal("Failed to start server: ", err)
-	// }
+	// start server
+	log.Println("server running at http://localhost:8080")
+	if err := r.Run(":8080"); err != nil {
+		log.Fatal("failed to start server: ", err)
+	}
+
 }

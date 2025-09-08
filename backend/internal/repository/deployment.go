@@ -31,7 +31,7 @@ func (r *deploymentRepository) Create(ctx context.Context, d *models.Deployment)
 
 func (r *deploymentRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Deployment, error) {
 	var d models.Deployment
-	if err := getDB(ctx, r.db).First(d, "id = ?", id).Error; err != nil {
+	if err := getDB(ctx, r.db).First(&d, "id = ?", id).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, ErrNotFound
 		}

@@ -13,7 +13,7 @@ type deploymentService struct {
 	repo repository.DeploymentRepository
 }
 
-func NewDeploymentRepository(repo repository.DeploymentRepository) DeploymentService {
+func NewDeploymentService(repo repository.DeploymentRepository) DeploymentService {
 	return &deploymentService{repo: repo}
 }
 
