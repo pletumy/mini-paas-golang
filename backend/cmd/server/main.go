@@ -2,11 +2,12 @@ package main
 
 import (
 	"log"
+	"os"
+
 	"mini-paas/backend/internal/api"
 	"mini-paas/backend/internal/db"
 	"mini-paas/backend/internal/repository"
 	"mini-paas/backend/internal/services"
-	"os"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,7 +16,7 @@ func main() {
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
 		// dsn = "host=localhost user=postgres password=123 dbname=mini_paas port=5432 sslmode=disable"      //dev
-		dsn = "host=localhost user=postgres password=123 dbname=mini_paas_test port=5432 sslmode=disable" //test
+		dsn = "host=localhost user=postgres password=123 dbname=mini_paas_test port=5432 sslmode=disable" // test
 	}
 
 	gormDB, err := db.ConnectDB(dsn)
@@ -51,5 +52,4 @@ func main() {
 	if err := r.Run(":8080"); err != nil {
 		log.Fatal("failed to start server: ", err)
 	}
-
 }

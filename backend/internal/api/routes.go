@@ -11,7 +11,8 @@ func SetUpRoutes(
 	appService services.AppService,
 	deployService services.DeploymentService,
 	userService services.UserService,
-	logService services.LogService) {
+	logService services.LogService,
+) {
 	api := r.Group("/api")
 
 	// app routes
@@ -26,6 +27,8 @@ func SetUpRoutes(
 	api.POST("/deployments", depHandler.CreateDeploymentHandler)
 	api.GET("/deployments", depHandler.ListAllDeploymentsHandler)
 	api.GET("/deployments/:id", depHandler.GetDeploymentByIDHandler)
+	api.POST("/deployments/deploy", depHandler.DeployAppHandler)
+	api.GET("/deployments/:id/status", depHandler.GetDeploymentStatusHandler)
 
 	// user
 	userHandler := NewUserHandler(userService)
@@ -37,5 +40,5 @@ func SetUpRoutes(
 	logHandler := NewLogHandler(logService)
 	api.POST("/logs", logHandler.CreateLogHandler)
 	api.GET("/logs", logHandler.ListAllLogsHandler)
-
+	api.GET("/deployments/:id", logHandler.StreamLogsHandler)
 }

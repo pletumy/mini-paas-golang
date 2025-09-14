@@ -60,6 +60,25 @@ type ListDeploymentsRequest struct {
 	Desc   bool    `form:"desc"`
 }
 
+type DeployAppRequest struct {
+	AppID    string `json:"app_id" binding:"required"`
+	Version  string `json:"version" binding:"required"`
+	ImageURL string `json:"image_url" binding:"required"`
+}
+
+type DeployAppResponse struct {
+	ID      string `json:"id"`
+	AppID   string `json:"app_id"`
+	Version string `json:"version"`
+	Status  string `json:"status"`
+	Message string `json:"message"`
+}
+
+type DeploymentStatusResponse struct {
+	ID     string `json:"id"`
+	Status string `json:"status"`
+}
+
 // ===== User DTOs =====
 type CreateUserRequest struct {
 	Name  string `json:"name" binding:"required"`
@@ -85,5 +104,4 @@ type LogResponse struct {
 	Timestamp    time.Time `json:"timestamp"`
 }
 
-type ListLogsRequest struct {
-}
+type ListLogsRequest struct{}

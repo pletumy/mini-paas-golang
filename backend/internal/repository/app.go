@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+
 	"mini-paas/backend/internal/models"
 
 	"github.com/google/uuid"
@@ -88,7 +89,7 @@ func (r *appRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Appl
 func (r *appRepository) List(ctx context.Context, f AppFilter, page Page, sort Sort) (ListResult[models.Application], error) {
 	db := getDB(ctx, r.db).Model(&models.Application{})
 
-	//filters
+	// filters
 	if f.OwnerID != nil {
 		db = db.Where("owner_id = ?", *f.OwnerID)
 	}
@@ -102,13 +103,13 @@ func (r *appRepository) List(ctx context.Context, f AppFilter, page Page, sort S
 		db = db.Where("name ILIKE ?", like)
 	}
 
-	//count
+	// count
 	var total int64
 	if err := db.Count(&total).Error; err != nil {
 		return ListResult[models.Application]{}, mapGormError(err)
 	}
 
-	//sorting
+	// sorting
 	order := "created_at DESC"
 	if sort.Field != "" {
 		dir := "ASC"
@@ -142,5 +143,4 @@ func (r *appRepository) ExistsByNameForOwner(ctx context.Context, ownerID uuid.U
 		return false, mapGormError(err)
 	}
 	return count > 0, nil
-
 }

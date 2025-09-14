@@ -22,7 +22,6 @@ func TestUserIntegration(t *testing.T) {
 		"application/json",
 		strings.NewReader(payload),
 	)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -50,5 +49,4 @@ func TestUserIntegration(t *testing.T) {
 		t.Fatalf("get user by email expected 200 got %d", resp3.StatusCode)
 	}
 	resp3.Body.Close()
-
 }

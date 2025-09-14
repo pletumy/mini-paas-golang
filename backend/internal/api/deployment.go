@@ -1,10 +1,12 @@
 package api
 
 import (
+	"fmt"
+	"net/http"
+
 	"mini-paas/backend/internal/models"
 	"mini-paas/backend/internal/repository"
 	"mini-paas/backend/internal/services"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -31,6 +33,7 @@ func (h *DeploymentHandler) CreateDeploymentHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid AppID"})
 		return
 	}
+
 	dep := &models.Deployment{
 		AppID:   appUUID,
 		Version: req.Version,
@@ -120,6 +123,61 @@ func (h *DeploymentHandler) GetDeploymentByIDHandler(c *gin.Context) {
 		AppID:   dep.AppID.String(),
 		Version: dep.Version,
 		Status:  dep.Status,
+	})
+}
+
+// POST /api/deployments/deploy
+func (h *DeploymentHandler) DeployAppHandler(c *gin.Context) {
+	var req DeployAppRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	appUUID, err := uuid.Parse(req.AppID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid AppID"})
+	}
+
+	app := models.Application{
+		ID:       appUUID,
+		Name:     fmt.Sprintf("app-%s", req.AppID[:8]),
+		ImageURL: req.ImageURL,
+	}
+
+	deployment, err := h.deploymentService.DeployApp(c.Request.Context(), app)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusAccepted, DeployAppResponse{
+		ID:      deployment.ID.String(),
+		AppID:   deployment.AppID.String(),
+		Version: req.Version,
+		Status:  deployment.Status,
+		Message: "Deployment initiated successfully",
+	})
+}
+
+// GET /api/deployments/:id/status
+func (h *DeploymentHandler) GetDeploymentStatusHandler(c *gin.Context) {
+	idStr := c.Param("id")
+	uid, err := uuid.Parse(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid UUID"})
+		return
+	}
+
+	status, err := h.deploymentService.GetDeploymentStatus(c.Request.Context(), uid)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "deployment not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, DeploymentStatusResponse{
+		ID:     uid.String(),
+		Status: status,
 	})
 }
 

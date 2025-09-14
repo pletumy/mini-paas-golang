@@ -1,11 +1,14 @@
 package api
 
 import (
+	"fmt"
+	"io"
+	"net/http"
+	"strconv"
+
 	"mini-paas/backend/internal/models"
 	"mini-paas/backend/internal/repository"
 	"mini-paas/backend/internal/services"
-	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -48,14 +51,13 @@ func (h *LogHandler) CreateLogHandler(c *gin.Context) {
 		DeploymentID: newLog.DeploymentID.String(),
 		Message:      newLog.Message,
 	})
-
 }
 
 // GET /api/logs
 func (h *LogHandler) ListAllLogsHandler(c *gin.Context) {
 	var (
 		filter repository.LogFilter
-		limit  = 50 //default limit
+		limit  = 50 // default limit
 	)
 
 	depploymentID := c.Query("deployment_id")
@@ -72,7 +74,7 @@ func (h *LogHandler) ListAllLogsHandler(c *gin.Context) {
 
 	filter.DeploymentID = parsedDepID
 
-	//optional: limit
+	// optional: limit
 	if l := c.Query("limit"); l != "" {
 		if v, err := strconv.Atoi(l); err == nil && v > 0 && v <= 200 {
 			limit = v
@@ -98,6 +100,30 @@ func (h *LogHandler) ListAllLogsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"items": resp,
 		"limit": limit,
+	})
+}
+
+func (h *LogHandler) StreamLogsHandler(c *gin.Context) {
+	deploymentID := c.Param("id")
+	follow := c.Query("follow") == "true"
+	tailLines := int64(100)
+
+	namespace := "default"
+	podName := fmt.Sprintf("deploy-%s-pod", deploymentID)
+
+	logCh, err := h.logService.StreamPodLogs(c, namespace, podName, follow, &tailLines)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Stream via SSE
+	c.Stream(func(w io.Writer) bool {
+		if msg, ok := <-logCh; ok {
+			c.SSEvent("message", msg)
+			return true
+		}
+		return false
 	})
 }
 

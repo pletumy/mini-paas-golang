@@ -2,10 +2,13 @@ package services
 
 import (
 	"context"
+	"io"
+
 	"mini-paas/backend/internal/models"
 	"mini-paas/backend/internal/repository"
 
 	"github.com/google/uuid"
+	corev1 "k8s.io/api/core/v1"
 )
 
 type AppService interface {
@@ -20,6 +23,9 @@ type DeploymentService interface {
 	GetDeploymentByID(ctx context.Context, id uuid.UUID) (*models.Deployment, error)
 	ListAllDeployments(ctx context.Context, f repository.DeploymentFilter, page repository.Page, sort repository.Sort) (repository.ListResult[models.Deployment], error)
 	// ListDeploymentsByApp(ctx context.Context, appID uuid.UUID, page repository.Page, sort repository.Sort) (repository.ListResult[models.Deployment], error)
+	// k8
+	DeployApp(ctx context.Context, app models.Application) (*models.Deployment, error)
+	GetDeploymentStatus(ctx context.Context, id uuid.UUID) (string, error)
 }
 
 type UserService interface {
@@ -32,4 +38,11 @@ type LogService interface {
 	CreateLog(ctx context.Context, log *models.Log) (*models.Log, error)
 	ListAllLogs(ctx context.Context, f repository.LogFilter, limit int) ([]models.Log, error)
 	// ListLogsByDeployment(ctx context.Context, depID uuid.UUID) (repository.ListResult[models.Log], error)
+	// k8
+	StreamPodLogs(ctx context.Context, namespace, podName string, follow bool, tailLines *int64) (<-chan string, error)
+}
+
+type K8sLogService interface {
+	FindPodsForDeployment(ctx context.Context, deploymentName, namespace string) ([]corev1.Pod, error)
+	StreamPodLogs(ctx context.Context, namespace, podName string, follow bool, tailLine *int64) (io.ReadCloser, error)
 }

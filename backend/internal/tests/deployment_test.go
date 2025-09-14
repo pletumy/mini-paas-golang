@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestDeploymentIntegration(t *testing.T) {
@@ -27,10 +28,10 @@ func TestDeploymentIntegration(t *testing.T) {
 	json.NewDecoder(appResp.Body).Decode(&appCreated)
 	appID := appCreated["id"].(string)
 
-	//	create deployment
-	payload := `{"app_id":"` + appID + `", "version":"v1"}`
+	//  deploy app to Minikube
+	payload := `{"app_id":"` + appID + `", "version":"v1", "image_url":"nginx:stable"}`
 	resp, err := http.Post(
-		testServer.URL+"/api/deployments",
+		testServer.URL+"/api/deployments/deploy",
 		"application/json",
 		strings.NewReader(payload),
 	)
@@ -38,22 +39,39 @@ func TestDeploymentIntegration(t *testing.T) {
 		log.Fatal(err)
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusCreated {
-		t.Fatalf("create deployment expected 201 got %d", resp.StatusCode)
+	if resp.StatusCode != http.StatusAccepted {
+		t.Fatalf("deploy expected 202 got %d", resp.StatusCode)
 	}
 
 	var created map[string]interface{}
 	json.NewDecoder(resp.Body).Decode(&created)
 	deployID := created["id"].(string)
 
-	// get by id
-	resp2, _ := http.Get(
-		testServer.URL + "/api/deployments/" + deployID,
-	)
-	if resp2.StatusCode != http.StatusOK {
-		t.Fatalf("get deployment by id expected 200 got %d", resp2.StatusCode)
+	// poll status until RUNNING or FAILED or timeout
+	deadline := time.Now().Add(90 * time.Second)
+	var lastStatus string
+	for time.Now().Before(deadline) {
+		resp2, err := http.Get(testServer.URL + "/api/deployments/" + deployID + "/status")
+		if err != nil {
+			t.Fatalf("status request failed: %v", err)
+		}
+		if resp2.StatusCode != http.StatusOK {
+			resp2.Body.Close()
+			time.Sleep(3 * time.Second)
+			continue
+		}
+		var statusResp map[string]interface{}
+		json.NewDecoder(resp2.Body).Decode(&statusResp)
+		resp2.Body.Close()
+		lastStatus, _ = statusResp["status"].(string)
+		if lastStatus == "RUNNING" || lastStatus == "FAILED" {
+			break
+		}
+		time.Sleep(5 * time.Second)
 	}
-	resp2.Body.Close()
+	if lastStatus == "" {
+		t.Fatalf("status polling timed out without result")
+	}
 
 	// list
 	resp3, _ := http.Get(testServer.URL + "/api/deployments")
@@ -61,5 +79,4 @@ func TestDeploymentIntegration(t *testing.T) {
 		t.Fatalf("list deployments expected 200 got %d", resp3.StatusCode)
 	}
 	resp3.Body.Close()
-
 }

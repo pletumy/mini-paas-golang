@@ -48,7 +48,6 @@ func TestLogIntegration(t *testing.T) {
 		testServer.URL+"/api/logs",
 		"application/json",
 		strings.NewReader(payload))
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -63,5 +62,4 @@ func TestLogIntegration(t *testing.T) {
 		t.Fatalf("list logs expected 200 got %d", resp2.StatusCode)
 	}
 	resp2.Body.Close()
-
 }

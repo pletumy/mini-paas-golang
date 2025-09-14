@@ -2,13 +2,14 @@ package tests
 
 import (
 	"log"
+	"net/http/httptest"
+	"os"
+	"testing"
+
 	"mini-paas/backend/internal/api"
 	"mini-paas/backend/internal/db"
 	"mini-paas/backend/internal/repository"
 	"mini-paas/backend/internal/services"
-	"net/http/httptest"
-	"os"
-	"testing"
 
 	"github.com/gin-gonic/gin"
 )
@@ -52,5 +53,4 @@ func TestMain(m *testing.M) {
 	testServer.Close()
 
 	os.Exit(code)
-
 }
